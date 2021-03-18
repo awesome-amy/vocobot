@@ -1,0 +1,11 @@
+# data
+data/paracrawl/
+data/wmt13/
+
+# dotenv
+.env
+
+#pycharm
+.idea/
+__pycache__/
+venv/
