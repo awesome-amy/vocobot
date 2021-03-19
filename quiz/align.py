@@ -1,8 +1,11 @@
 import string
-import logging
+from simalign import SentenceAligner
+
+# make alignment model
+aligner = SentenceAligner(model="bert", token_type="bpe", matching_methods="mai")
 
 
-def get_alignment(sentence, aligner):
+def get_alignment(sentence):
     if len(sentence) != 4:
         return None
 
@@ -17,27 +20,30 @@ def get_alignment(sentence, aligner):
     # Each method has a list of pairs indicating the indexes of aligned words (The alignments are zero-indexed).
     alignments = aligner.get_word_aligns(src_sentence, trg_sentence)
 
-    if word in src_lemma:
-        src_index = src_lemma.index(word)
-        answer = src_sentence[src_index]
-    elif word in src_sentence:
-        src_index = src_sentence.index(word)
-        answer = word
-    else:
+    try:
+        if word in src_lemma:
+            src_index = src_lemma.index(word)
+            answer = src_sentence[src_index]
+        elif word in src_sentence:
+            src_index = src_sentence.index(word)
+            answer = word
+        else:
+            return None
+        # Simalign methods: mwmf, inter, itermax
+        trg_word_index = [b for (a, b) in alignments['mwmf'] if a == src_index]
+
+        # answer = src_sentence[src_index] if word not in sentence[2] else word
+        question_de = sentence[2].replace(answer, "__________", 1)
+        question_en = sentence[1]
+        for j in trg_word_index:
+            question_en = question_en.replace(trg_sentence[j], '**' + trg_sentence[j].upper() + '**', 1)
+
+        question = {
+            "question_de": question_de,
+            "question_en": question_en,
+            "answer": answer
+        }
+        return question
+    except:
         return None
-    # Simalign methods: mwmf, inter, itermax
-    trg_word_index = [b for (a, b) in alignments['mwmf'] if a == src_index]
-
-    # answer = src_sentence[src_index] if word not in sentence[2] else word
-    question_de = sentence[2].replace(answer, "__________", 1)
-    question_en = sentence[1]
-    for j in trg_word_index:
-        question_en = question_en.replace(trg_sentence[j], '**' + trg_sentence[j].upper() + '**', 1)
-
-    question = {
-        "question_de": question_de,
-        "question_en": question_en,
-        "answer": answer
-    }
-    return question
 
