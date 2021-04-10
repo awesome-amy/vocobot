@@ -26,7 +26,7 @@ def get_paracrawl_sentences(text, max_try=3):
         process.close()
 
         output = [i.split("\t") for i in [lines for lines in preprocessed.split("\n")]]
-        output.pop() # remove an empty line at the end of the command line output
+        output.pop()     # remove an empty line at the end of the command line output
         sentences = sentences + output
         word_set = word_set - set([i[0] for i in output])
         i = i+1

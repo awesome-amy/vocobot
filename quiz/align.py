@@ -2,10 +2,9 @@ import string
 from simalign import SentenceAligner
 
 # make alignment model
-aligner = SentenceAligner(model="bert", token_type="bpe", matching_methods="mai")
 
 
-def get_alignment(sentence):
+def get_alignment(sentence, aligner=False):
     if len(sentence) != 4:
         return None
 
@@ -16,10 +15,6 @@ def get_alignment(sentence):
     src_sentence = list(filter(None, sentence[2].translate(str.maketrans('', '', punctuation)).split(" ")))
     src_lemma = list(filter(None, sentence[3].translate(str.maketrans('', '', punctuation)).split(" ")))
 
-    # The output is a dictionary with different matching methods.
-    # Each method has a list of pairs indicating the indexes of aligned words (The alignments are zero-indexed).
-    alignments = aligner.get_word_aligns(src_sentence, trg_sentence)
-
     try:
         if word in src_lemma:
             src_index = src_lemma.index(word)
@@ -29,14 +24,17 @@ def get_alignment(sentence):
             answer = word
         else:
             return None
-        # Simalign methods: mwmf, inter, itermax
-        trg_word_index = [b for (a, b) in alignments['mwmf'] if a == src_index]
 
-        # answer = src_sentence[src_index] if word not in sentence[2] else word
         question_de = sentence[2].replace(answer, "__________", 1)
+
         question_en = sentence[1]
-        for j in trg_word_index:
-            question_en = question_en.replace(trg_sentence[j], '**' + trg_sentence[j].upper() + '**', 1)
+        # Simalign methods: mwmf, inter, itermax
+        if aligner:
+            aligner = SentenceAligner(model="bert", token_type="bpe", matching_methods="mai")
+            alignments = aligner.get_word_aligns(src_sentence, trg_sentence)
+            trg_word_index = [b for (a, b) in alignments['mwmf'] if a == src_index]
+            for j in trg_word_index:
+                question_en = question_en.replace(trg_sentence[j], '**' + trg_sentence[j].upper() + '**', 1)
 
         question = {
             "question_de": question_de,

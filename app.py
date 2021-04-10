@@ -40,12 +40,12 @@ class WebhookRequestData(BaseModel):
 # receive messages that Facebook sends our bot
 @app.get('/webhook')
 async def init_messenger(request: Request):
-    # Before allowing people to message your bot Facebook has implemented a verify token
-    # that confirms all requests that your bot receives came from Facebook.
     token_sent = request.query_params.get("hub.verify_token")
     # Set get started button and greeting text
-    await set_get_started_button()
-    await set_greeting()
+    # await set_get_started_button()
+    # await set_greeting()
+    # await set_persistent_menu()
+    await initial_setup()
     return await verify_fb_token(token_sent, request)
 
 
@@ -80,7 +80,7 @@ async def set_get_started_button():
         }
     }
     # send an HTTP request back to FB
-    fb_response = requests.post('https://graph.facebook.com/v2.6/me/messenger_profile',
+    fb_response = requests.post('https://graph.facebook.com/v10.0/me/messenger_profile',
                                 params={"access_token": ACCESS_TOKEN},
                                 data=json.dumps(get_started_button),
                                 headers={'content-type': 'application/json'})
@@ -101,7 +101,7 @@ async def set_greeting():
         ]
     }
     # send an HTTP request back to FB
-    fb_response = requests.post('https://graph.facebook.com/v2.6/me/messenger_profile',
+    fb_response = requests.post('https://graph.facebook.com/v10.0/me/messenger_profile',
                                 params={"access_token": ACCESS_TOKEN},
                                 data=json.dumps(greeting),
                                 headers={'content-type': 'application/json'})
@@ -111,6 +111,82 @@ async def set_greeting():
     else:
         logger.debug('Init: added greeting text.')
 
+
+async def set_persistent_menu():
+    persistent_menu = {
+        "persistent_menu": [
+            {
+                "locale": "default",
+                "composer_input_disabled": False,
+                "call_to_actions": [
+                    {
+                        "type": "postback",
+                        "title": "Start Quiz",
+                        "payload": "start_quiz_payload"
+                    },
+                    {
+                        "type": "postback",
+                        "title": "Dictionary",
+                        "payload": "dictionary_payload"
+                    }
+                ]
+            }
+        ]
+
+    }
+    # send an HTTP request back to FB
+    fb_response = requests.post('https://graph.facebook.com/v10.0/100346768805329/messenger_profile',
+                                params={"access_token": ACCESS_TOKEN},
+                                data=json.dumps(persistent_menu),
+                                headers={'content-type': 'application/json'})
+
+    if not fb_response.ok:
+        logger.debug('Init persistent menu error. %s: %s' % (fb_response.status_code, fb_response.text))
+    else:
+        logger.debug('Init: added persistent menu.')
+
+
+async def initial_setup():
+    setup = {
+        "get_started": {
+            "payload": "get_started_payload"
+        },
+        "greeting": [
+            {
+                "locale": "default",
+                "text": "Efficient vocabulary builder for German."
+            }
+        ],
+        "persistent_menu": [
+            {
+                "locale": "default",
+                "composer_input_disabled": False,
+                "call_to_actions": [
+                    {
+                        "type": "postback",
+                        "title": "Start Quiz",
+                        "payload": "start_quiz_payload"
+                    },
+                    {
+                        "type": "web_url",
+                        "title": "Dictionary",
+                        "url": "https://www.duden.de/"
+                    }
+                ]
+            }
+        ]
+
+    }
+    # send an HTTP request back to FB
+    fb_response = requests.post('https://graph.facebook.com/v10.0/me/messenger_profile',
+                                params={"access_token": ACCESS_TOKEN},
+                                data=json.dumps(setup),
+                                headers={'content-type': 'application/json'})
+
+    if not fb_response.ok:
+        logger.debug('Initial setup error. %s: %s' % (fb_response.status_code, fb_response.text))
+    else:
+        logger.debug('Initial setup done.')
 
 #################
 # Process Logic #
@@ -141,6 +217,8 @@ async def process_postback(recipient_id, message):
     payload = message['postback']['payload']
     if payload == 'get_started_payload':
         await respond_to_get_started(recipient_id)
+    elif payload == 'start_quiz_payload':
+        await respond_to_start_quiz(recipient_id)
     else:
         logger.debug('Received unknown postback payload.')
         pass
@@ -154,10 +232,16 @@ async def process_quick_reply(recipient_id, message):
 
 async def process_text(recipient_id, message):
     logger.debug('Processing text...')
+    text = message['message'].get('text')
+    if text == 'Quiz':
+        await respond_to_start_quiz(recipient_id)
     return "success"
 
 
 async def respond_to_get_started(recipient_id):
+    await set_persistent_menu()
+
+    await clear_quiz(recipient_id)
     intro_quick_reply = {
       "recipient": {
         "id": recipient_id
@@ -182,13 +266,11 @@ async def respond_to_get_started(recipient_id):
 
     if not fb_response.ok:
         logger.debug('Respond to get started error. %s: %s' % (fb_response.status_code, fb_response.text))
-
-    await clear_quiz(recipient_id)
-
     return "success"
 
 
 async def respond_to_start_quiz(recipient_id):
+    await clear_quiz(recipient_id)
     text = 'Send a list of words to start a quiz. e.g. "Input: eindeutig, Botschaft"'
     start_quiz_prompt = {
         "messaging_type": "RESPONSE",

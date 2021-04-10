@@ -1,0 +1,221 @@
+###############FLOW DIAGRAM#########################
+
+
+############### MAIN TECHNOLOGY USED######################
+Sentence mining (with BERT alignment)
+Spaced repetition (with reinforcement learning?)
+Link to online dictionary (web crawler)
+******************Start up********************
+
+https://blog.floydhub.com/multiprocessing-vs-threading-in-python-what-every-data-scientist-needs-to-know/
+
+Use Cases for Threading
+GUI programs use threading all the time to make applications responsive. For example, in a text editing program, one thread can take care of recording the user inputs, another can be responsible for displaying the text, a third can do spell-checking, and so on. Here, the program has to wait for user interaction, which is the biggest bottleneck. Using multiprocessing won’t make the program any faster.
+
+Another use case for threading is programs that are IO bound or network bound, such as web-scrapers. In this case, multiple threads can take care of scraping multiple webpages in parallel. The threads have to download the webpages from the Internet, and that will be the biggest bottleneck, so threading is a perfect solution here. Web servers, being network bound, work similarly; with them, multiprocessing doesn’t have any edge over threading. Another relevant example is Tensorflow, which uses a thread pool to transform data in parallel.
+
+Use Cases for Multiprocessing
+Multiprocessing outshines threading in cases where the program is CPU intensive and doesn’t have to do any IO or user interaction. For example, any program that just crunches numbers will see a massive speedup from multiprocessing; in fact, threading will probably slow it down. An interesting real world example is Pytorch Dataloader, which uses multiple subprocesses to load the data into GPU.
+
+A typical data processing pipeline can be divided into the following steps:
+
+Reading raw data and storing into main memory or GPU (threading)
+Doing computation, using either CPU (multiprocessing) or GPU
+Storing the mined information in a database or disk. (threading)
+
+******************Start up********************
+
+# START APP
+brew services start rabbitmq
+redis-server /etc/redis/6379.conf
+
+# inside pyCharm venv
+celery -A tasks worker --loglevel=DEBUG
+python3 app.py 
+
+ngrok http 8000
+
+
+# STOP APP
+redis-cli FLUSHALL
+redis-cli shutdown
+brew services stop rabbitmq
+
+******************Speed up lemmatization********************
+Step 1: 
+df = fast_lemmatize("data/paracrawl/xaa", "", n_process=4)
+time to get lemmas from data/paracrawl/xaa: 294.4441919326782
+
+The multiprocessing standard library module does not work out of the box with spacy due to thinc having some nested functions, which can't be pickled with the pickle module. Instead, I use pathos.multiprocessing, which wraps the standard multiprocessing and (amongst other things) uses an enhanced pickler, dill, which can pickle nested functions.
+
+I then use the pathos.multiprocessing.Pool to create a pool of worker processes, running my function with Pool.imap (possibly some of the other maps could be fine/better).
+
+
+###################Fast API#####################
+https://testdriven.io/blog/moving-from-flask-to-fastapi/#:~:text=Flask%2C%20a%20web%20framework%2C%20is,amongst%20the%20machine%20learning%20community.&text=Unlike%20Flask%2C%20FastAPI%20is%20an,fastest%20Python%2Dbased%20web%20frameworks.
+
+https://s3.amazonaws.com/web-language-models/paracrawl/release7.1/en-de.txt.gz
+
+*******************Redis*********************
+redis-server /etc/redis/6379.conf
+redis-cli shutdown
+
+redis-cli keys "*"
+redis-cli get "2771675946290908:ready"
+redis-cli get lrange "2771675946290908:questions_de" 0 -1
+redis-cli FLUSHALL
+
+****************** RabbitMQ ******************
+brew services start rabbitmq
+brew services stop rabbitmq 
+
+
+rabbitmqctl add_user vocobot 2aPyuItWa9Ht
+rabbitmqctl add_vhost vocobot_host
+rabbitmqctl set_user_tags vocobot administrator
+rabbitmqctl set_permissions -p vocobot_host vocobot ".*" ".*" ".*"
+
+**************** Celery *******************
+celery -A tasks worker --loglevel=DEBUG
+
+
+********Facebook/Whatsapp/wechat Chatbot******
+[X]1. Initialize: Input a vocab list: comma delimited text or csv upload. Print total words received, total words recognized
+
+[X]2. Start quiz: 
+(1) SEND english sentence + german with blank 
+(2) GET word answer
+(3) SEND feedback for the answer + next question 
+
+[X]3. End quiz: Quiz stats
+
+4. Optional:
+(1) Hint: first letter
+(2) partially correct answer: grammar error? synonym? -> second chance
+(3) Loop through incorrect words before ending the quiz.
+(4) Default initalize: 20 random words + level (A1-C2)
+(5) Ask for feedback, improvment suggestion
+(6) Start again? after end quiz
+(7) Quit quiz in the middle
+
+The Callback URL or Verify Token couldn't be validated. Please verify the provided information or try again later
+
+https://fluff-efficacious-raptorex.glitch.me
+Ki8DbPDXDKf8meYfOttmoJhNNWezlN9
+
+We need to update the following on Facebook app settings page before adding The Callback URL or Verify Token.
+
+Privacy Policy URL
+Category
+App Icon (1024*1024)
+Its weird that facebook doesn't point our exact error.
+
+https://www.freeprivacypolicy.com/live/6736b76a-ef5d-4d57-b5ee-b1f25997564a
+
+https://www.facebook.com/Vocobot-100346768805329
+
+****Backend Pipeline:******
+[X]1. Corpus: 
+german original sentece | english original sentence | german lammatized sentence
+
+(1) Replace ##AT##-##AT## by - in WMT dataset
+(2）Replace &apos; by '
+(3) Replace &quot; by "
+
+[X]2. Input: 
+a german word in base form
+
+[X]3. Search: 
+grep in corpus the sentences that contain the input word. 
+
+LC_ALL=C grep -m 100 -F -w "Botschaft" xaa | wc -l
+
+(1)select k random chuncks
+ls | shuf -n k
+k = min(20, number_of_words)
+
+ls >> data_chunck
+cat data_chunk | shuf -n 5
+
+(2)grab m=2 matching sentences for each word
+parallel --link --tag LC_ALL=C grep -m 2 -F -w {1} {2} ::: Botschaft sprechen eindeutig ::: xaa xab
+
+parallel --link --tag LC_ALL=C grep -m 2 -F -w {1} data/paracrawl/{2} ::: Botschaft sprechen eindeutig ::: $(cat data/paracrawl/data_chunk | shuf -n 2)
+
+
+parallel --link --tagstring {1} LC_ALL=C grep -m 2 -F -w {1} data/paracrawl/{2} ::: Botschaft sprechen eindeutig ::: $(cat data/paracrawl/data_chunk | shuf -n 2)
+
+
+(3)check that all words are represented twice
+
+(4)if not repeat step (2) with the missing words. (Maximum 3 times)
+
+(5) shuffle a chunck occassionally, (every hour)
+
+
+[X]4. Alignment: 
+algin the input word between 
+(1) german lammatized sentence and german original sentence 
+(2) german original sentence and english original sentence
+
+[X]5. Format: 
+(1) replace the input word correspondant in german orignal sentence with blank to fill _____ 
+(2) highlight the input word correspondant in english orignal sentence
+(3) save the correct answer
+
+
+################ Dataset ####################
+----# WMT # ------
+ https://colab.research.google.com/github/mrm8488/shared_colab_notebooks/blob/master/T5_evaluate_WMT.ipynb
+ Also, for historical reasons, we split compound words, e.g., "rich-text format" --> rich ##AT##-##AT## text format.
+
+---# Lementize german text# ------
+ https://stackoverflow.com/questions/57857240/ho-to-do-lemmatization-on-german-text
+
+################ Alignment ####################
+-------- #Simalign3 ------------------
+https://github.com/cisnlp/simalign
+
+-------- #Fast Align#------------------
+https://github.com/clab/fast_align
+https://github.com/clab/fast_align/issues/46
+
+-------- # Mgiza #------------
+https://github.com/moses-smt/mgiza/
+
+
+################ Translation ####################
+-----------# Open NMT #------
+1. Download pretrained models:
+https://opennmt.net/Models-py/
+
+2. EN-DE Transformer: Tokenize with Sentencepiece
+https://github.com/OpenNMT/OpenNMT-py/issues/1760 (with missing options)
+
+3. DE-EN Bi-LSTM: 
+https://forum.opennmt.net/t/bad-results-from-de-en-pretrained-models/1729
+
+https://forum.opennmt.net/t/poor-translation-result-with-english-german-and-german-english-pre-trained-models/1655/12
+
+https://forum.opennmt.net/t/preprocessing-for-running-german-english-bilstm-pretrained-model/3339
+"I did reproduce the BLEU score on the IWSLT test set. However, I don’t think we can expect good generic results with this model and training dataset as they are both fairly small."
+
+*****Bottom-line: alignment is not great with pre-trained model.*****
+You might be interested in the detokenize_with_ranges 14 function from the OpenNMT Tokenizer.
+
+It returns a mapping between token ids and character ranges in the detokenized text.
+
+All single source Transformer models support returning an alignment vector, including during serving. For it to be usable, the model should be trained with guided alignment:
+https://opennmt.net/OpenNMT-tf/alignments.html
+
+https://opennmt.net/OpenNMT-py/FAQ.html#can-i-get-word-alignments-while-translating
+
+Currently, we support producing word alignment while translating for Transformer based models. Using -report_align when calling translate.py will output the inferred alignments in Pharaoh format. Those alignments are computed from an argmax on the average of the attention heads of the second to last decoder layer. The resulting alignment src-tgt (Pharaoh) will be pasted to the translation sentence, separated by |||. Note: The second to last default behaviour was empirically determined. It is not the same as the paper (they take the penultimate layer), probably because of slight differences in the architecture.
+
+alignments use the standard “Pharaoh format”, where a pair i-j indicates the ith word of source language is aligned to jth word of target language.
+
+Example: {‘src’: ‘das stimmt nicht !’; ‘output’: ‘that is not true ! ||| 0-0 0-1 1-2 2-3 1-4 1-5 3-6’}
+
+Using the-tgt option when calling translate.py, we output alignments between the source and the gold target rather than the inferred target, assuming we’re doing evaluation.
+
+To convert subword alignments to word alignments, or symetrize bidirectional alignments, please refer to the lilt scripts. (https://github.com/lilt/alignment-scripts)
