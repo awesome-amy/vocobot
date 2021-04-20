@@ -1,29 +1,7 @@
-###############FLOW DIAGRAM#########################
-
-
 ############### MAIN TECHNOLOGY USED######################
 Sentence mining (with BERT alignment)
 Spaced repetition (with reinforcement learning?)
 Link to online dictionary (web crawler)
-******************Start up********************
-
-https://blog.floydhub.com/multiprocessing-vs-threading-in-python-what-every-data-scientist-needs-to-know/
-
-Use Cases for Threading
-GUI programs use threading all the time to make applications responsive. For example, in a text editing program, one thread can take care of recording the user inputs, another can be responsible for displaying the text, a third can do spell-checking, and so on. Here, the program has to wait for user interaction, which is the biggest bottleneck. Using multiprocessing won’t make the program any faster.
-
-Another use case for threading is programs that are IO bound or network bound, such as web-scrapers. In this case, multiple threads can take care of scraping multiple webpages in parallel. The threads have to download the webpages from the Internet, and that will be the biggest bottleneck, so threading is a perfect solution here. Web servers, being network bound, work similarly; with them, multiprocessing doesn’t have any edge over threading. Another relevant example is Tensorflow, which uses a thread pool to transform data in parallel.
-
-Use Cases for Multiprocessing
-Multiprocessing outshines threading in cases where the program is CPU intensive and doesn’t have to do any IO or user interaction. For example, any program that just crunches numbers will see a massive speedup from multiprocessing; in fact, threading will probably slow it down. An interesting real world example is Pytorch Dataloader, which uses multiple subprocesses to load the data into GPU.
-
-A typical data processing pipeline can be divided into the following steps:
-
-Reading raw data and storing into main memory or GPU (threading)
-Doing computation, using either CPU (multiprocessing) or GPU
-Storing the mined information in a database or disk. (threading)
-
-******************Start up********************
 
 # START APP
 brew services start rabbitmq
@@ -34,7 +12,6 @@ celery -A tasks worker --loglevel=DEBUG
 python3 app.py 
 
 ngrok http 8000
-
 
 # STOP APP
 redis-cli FLUSHALL
@@ -50,10 +27,8 @@ The multiprocessing standard library module does not work out of the box with sp
 
 I then use the pathos.multiprocessing.Pool to create a pool of worker processes, running my function with Pool.imap (possibly some of the other maps could be fine/better).
 
-
 ###################Fast API#####################
 https://testdriven.io/blog/moving-from-flask-to-fastapi/#:~:text=Flask%2C%20a%20web%20framework%2C%20is,amongst%20the%20machine%20learning%20community.&text=Unlike%20Flask%2C%20FastAPI%20is%20an,fastest%20Python%2Dbased%20web%20frameworks.
-
 https://s3.amazonaws.com/web-language-models/paracrawl/release7.1/en-de.txt.gz
 
 *******************Redis*********************

@@ -11,3 +11,4 @@ __pycache__/
 venv/
 
 dev_note
+dump.rdb
